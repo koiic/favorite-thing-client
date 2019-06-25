@@ -13,21 +13,27 @@
       </li> -->
         <li class="nav-item">
           <!-- <a class="nav-link" href="#">View</a> -->
-          <router-link :to="{ name: 'Favorite' }">View All</router-link>
+          <router-link v-if="auth" :to="{ name: 'Favorite' }">Dashboard</router-link>
 
         </li>
         <li class="nav-item">
           <!-- <a class="nav-link" href="#">Dashboard</a> -->
-          <router-link :to="{ name: 'Dashboard' }">Dashboard</router-link>
+          <router-link v-if="auth" :to="{ name: 'FavoriteCard' }">Favorite</router-link>
 
         </li>
 
       </ul>
+       <li class="nav-item">
+       <router-link v-if="auth" :to="{ name: 'Audit' }">View Logs</router-link>
+
+      </li>
+
       <li class="nav-item">
         <button type="button" v-if="!auth" class="btn btn-success btn-sm" v-b-modal.login-modal>Login</button>
         <button type="button" v-if="auth"  @click="logOut()" class="btn btn-success btn-sm">Logout</button>
       </li>
-      <li class="nav-item">
+
+       <li class="nav-item">
         <button type="button" v-if="!auth" class="btn btn-success btn-sm" v-b-modal.signup-modal>SignUp</button>
         <h5 v-if='auth'>{{username.split(' ')[0]}}</h5>
       </li>
@@ -80,6 +86,7 @@
 <script>
 import axios from 'axios';
 import Alert from './Alert.vue';
+import Swal from 'sweetalert2'
 export default {
   name: 'Index',
   props: {
@@ -107,28 +114,38 @@ export default {
     authentice(payload) {
       const path = 'http://127.0.0.1:5000/api/v1/auth/login';
       axios.post(path, payload).then((response) => {
-          this.showMessage = true
-          this.message = response.data.message
-          var token = response.data.data.token
-          var user = response.data.data.user.name
-          localStorage.setItem('token', token)
-          localStorage.setItem('user', user)
-          this.auth = true
-          this.$router.replace(this.$route.query.redirect || {
-            name: "Favorite"
-          })
+        Swal.fire({
+          position: 'top-end',
+          type: 'success',
+          title: response.data.message,
+          showConfirmButton: false,
+          timer: 1500
+        })
+        var token = response.data.data.token
+        var user = response.data.data.user.name
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', user)
+        this.auth = true
+        this.$router.replace(this.$route.query.redirect || {
+          name: "Favorite"
+        })
 
-        })
-        .catch((error) => {
-          this.message = response.data.message
-        })
+      })
+      .catch((error) => {
+        this.message = response.data.message
+      })
 
     },
      register(payload) {
       const path = 'http://127.0.0.1:5000/api/v1/auth/register';
       axios.post(path, payload).then((response) => {
-          this.showMessage = true
-          this.message = response.data.message
+          Swal.fire({
+          position: 'top-end',
+          type: 'success',
+          title: response.data.message,
+          showConfirmButton: false,
+          timer: 1500
+        })
           var token = response.data.data.token
           var user = response.data.data.user.name
           localStorage.setItem('token', token)
@@ -184,15 +201,24 @@ export default {
       if (localStorage.token) {
         this.auth = true
         this.username = localStorage.getItem('user')
-        // this.$router.replace(this.$route.query.redirect || {
-        //   name: 'Favorite'
-        // })
       }
+      else {
+         this.$router.push('/?redirect=' + this.$route.path)
+      }
+
+
     },
     logOut() {
       delete localStorage.token
       delete localStorage.user
       this.auth = false
+      Swal.fire({
+          position: 'top-end',
+          type: 'warning',
+          title: 'you have been logged out successfully',
+          showConfirmButton: false,
+          timer: 1500
+        })
       this.$router.replace(this.$route.query.redirect || {
         name: 'index'
       })
